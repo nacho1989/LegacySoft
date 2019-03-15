@@ -1,0 +1,11 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/.vs/TextDiffEngine/v15/Server/sqlite3
+/.vs/TextDiffEngine/v15
+/packages
+/TextDiff.Tests/bin/Debug
+/TextDiff.Tests/obj/Debug
+/TextDiffEngine/bin/Debug
+/TextDiffEngine/obj/Debug
