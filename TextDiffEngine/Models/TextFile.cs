@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using TextDiffEngine.Abstract;
 using IComparable = TextDiffEngine.Abstract.IComparable;
@@ -14,7 +15,7 @@ namespace TextDiffEngine.Models
         public TextFile(string text)
         {
             _text = text;
-            Lines = new ArrayList();
+            Lines = new List<ITextLine>();
             using (StringReader sr = new StringReader(text))
             {
                 String line;

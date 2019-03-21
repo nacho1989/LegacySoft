@@ -11,7 +11,7 @@ namespace TextDiffEngine.Models
     public class TextLine : ITextLine
     {
         public string Line { get; set; }
-        public int Index { get; set; }
+        public int? Index { get; set; }
         public DiffCounter OC { get; set; }
         public DiffCounter NC { get; set; }
         public int? OLNO { get; set; }
@@ -25,35 +25,17 @@ namespace TextDiffEngine.Models
         public TextLine() { }
         public int CompareTo(object obj)
         {
-            return Index.CompareTo(((TextLine)obj).Index);
+            return Index.Value.CompareTo(((TextLine)obj).Index.Value);
         }
 
         public bool IsEqualTo(object obj)
         {
-            if(Line.CompareTo(((TextLine)obj).Line) != 0)
+            if(Line.CompareTo(((TextLine)obj)?.Line) != 0)
             {
                 return false;
             }
-            else if (Index.CompareTo(((TextLine)obj).Index) != 0)
-            {
-                return false;
-            }
-            else if (NC.CompareTo(((TextLine)obj).NC) != 0)
-            {
-                return false;
-            }
-            else if (OC.CompareTo(((TextLine)obj).OC) != 0)
-            {
-                return false;
-            }
-            else if (OLNO.Value.CompareTo(((TextLine)obj).OLNO) != 0)
-            {
-                return false;
-            }
-            else
-            {
-                return true;
-            }
+
+            return true;
         }
     }
 }

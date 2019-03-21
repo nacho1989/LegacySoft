@@ -5,14 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace TextDiffEngine.Enumerations
-{
-    public enum DiffStatus
-    {
-        Matched,
-        UnMatched,
-        Unknown
-    }
-
+{   
     public enum DiffCounter
     {
         Zero,

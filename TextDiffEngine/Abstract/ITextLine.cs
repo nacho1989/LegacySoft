@@ -12,7 +12,7 @@ namespace TextDiffEngine.Abstract
         DiffCounter OC { get; set; }
         DiffCounter NC { get; set; }
         string Line { get; set; }
-        int Index { get; set; }
+        int? Index { get; set; }
         int? OLNO { get; set; }
 
         bool IsEqualTo(object obj);

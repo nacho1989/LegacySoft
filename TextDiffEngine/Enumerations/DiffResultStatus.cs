@@ -9,7 +9,6 @@ namespace TextDiffEngine.Enumerations
     public enum DiffResultStatus
     {
         Unchanged,
-        Changed,
         ReMoved,
         Added
     }

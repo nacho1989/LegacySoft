@@ -18,6 +18,10 @@ namespace TextDiffEngine
 
         private List<ITextLine> table;
 
+        private List<DiffResult> diffResultsNA;
+        private List<DiffResult> diffResultsOA;
+
+
         public void ProcessDiff(ITextFile source, ITextFile dest)
         {
             O = source;
@@ -28,6 +32,9 @@ namespace TextDiffEngine
             OA = new List<ITextLine>();
             NA = new List<ITextLine>();
 
+            diffResultsNA = new List<DiffResult>();
+            diffResultsOA = new List<DiffResult>();
+
             int sourceLineCount = O.Count();
             int destLineCount = N.Count();           
 
@@ -35,15 +42,16 @@ namespace TextDiffEngine
             ScanOldFile(sourceLineCount);
             FindUnchangedLines();
             ProcessLinesAsc();
-            //ProcessLinesDesc(source_line_count, dest_line_count);
+            ProcessLinesDesc();
+            GenerateDiffResult();
         }     
 
         private void ScanNewFile(int destLineCount)
         {
-            for (int i = 0; i < destLineCount - 1; i++)
+            for (int i = 0; i < destLineCount; i++)
             {
                 var line = N.GetByIndex(i);
-                if (!table.Any(x => x.Line.Equals(line.Line)))
+                if (!IsInTable(line))
                 {
                     line.NC = DiffCounter.One;
                     table.Add(line);
@@ -68,10 +76,10 @@ namespace TextDiffEngine
 
         private void ScanOldFile(int sourceLineCount)
         {
-            for (int i = 0; i < sourceLineCount - 1; i++)
+            for (int i = 0; i < sourceLineCount; i++)
             {
                 var line = O.GetByIndex(i);
-                if (!table.Any(x=> x.Line.Equals(line.Line)))
+                if (!IsInTable(line))
                 {
                     line.OC = DiffCounter.One;
                     table.Add(line);
@@ -102,11 +110,8 @@ namespace TextDiffEngine
 
         private void FindUnchangedLines()
         {
-            for (int i = 0; i < NA.Count - 1; i++)
+            for (int i = 0; i < NA.Count; i++)
             {
-                var na = NA[i];
-                var oa = OA[i];
-
                 if (NA[i].OC != DiffCounter.Zero
                     && NA[i].NC != DiffCounter.Zero)
                 {
@@ -119,13 +124,8 @@ namespace TextDiffEngine
                         if (olno != null)
                         {
                             NA[i].Index = olno.Value;
-                            OA[olno.Value].Index = i;
-
-                            //NA.Insert(olno.Value, line);
-                            //NA.RemoveAt(i);
-
-                            //OA.RemoveAt(olno.Value);
-                            //OA.Insert(i, line);
+                            if(OA.ElementAtOrDefault(olno.Value) != null)
+                                OA[olno.Value].Index = i;                           
                         }
                     }
                 }
@@ -134,69 +134,175 @@ namespace TextDiffEngine
 
         private void ProcessLinesAsc()
         {
-            for (int i = 0; i < NA.Count - 1; i++)
+            var smallestUpperBound = Math.Min(NA.Count, OA.Count);
+            for (var i = 0; i < smallestUpperBound; i++)
             {
-                var currentLine = NA[i];
-                var nextLine = NA[i + 1];
-
-                for (int j = 0; j < OA.Count - 1; j++)
+                // Do something with collection1[index] and collection2[index]
+                if (NA[i].Line.Equals(OA[i].Line)
+                            && (IsInTable(NA[i + 1])
+                            && IsInTable(OA[i + 1])))
                 {
-                    if (NA[i].Line.Equals(OA[j].Line) 
-                        && (table.Any(x=> x.Line == NA[i + 1].Line)
-                        && table.Any(y=> y.Line == OA[j + 1].Line)))
+                    var oline = ((List<ITextLine>)O.Lines).ElementAtOrDefault(i + 1);
+                    if (oline != null && OA.ElementAtOrDefault(i + 1) != null)
                     {
-                        var line = table.SingleOrDefault(x => x.Line.Equals(((TextLine)O.Lines[i + 1])?.Line));
-                        OA[j + 1] = line;
-
-                        var line2 = table.SingleOrDefault(x => x.Line.Equals(((TextLine)N.Lines[j + 1])?.Line));
-                        NA[i + 1] = line2;
+                        var line = table.SingleOrDefault(x => x.Line.Equals(oline.Line));
+                        OA[i + 1] = line;
                     }
+
+                    var nline = ((List<ITextLine>)N.Lines).ElementAtOrDefault(i + 1);
+                    if (nline != null && NA.ElementAtOrDefault(i + 1) != null)
+                    {
+                        var line = table.SingleOrDefault(x => x.Line.Equals(nline.Line));
+                        NA[i + 1] = line;
+                    }
+
                 }
+            }            
+        }
+
+        private void ProcessLinesDesc()
+        {
+            var smallestUpperBound = Math.Min(NA.Count, OA.Count);
+            for (var i = smallestUpperBound - 1; i >=1; i--)
+            {              
+                    if (NA[i].Line.Equals(OA[i].Line)
+                        && (IsInTable(NA[i - 1])
+                        && IsInTable(OA[i - 1])))
+                    {
+                        var oline = ((List<ITextLine>)O.Lines).ElementAtOrDefault(i - 1);
+                        if (oline != null && OA.ElementAtOrDefault(i - 1) != null)
+                        {
+                            var line = table.SingleOrDefault(x => x.Line.Equals(oline.Line));
+                            OA[i - 1] = line;
+                        }
+
+                        var nline = ((List<ITextLine>)N.Lines).ElementAtOrDefault(i - 1);
+                        if (nline != null && NA.ElementAtOrDefault(i - 1) != null)
+                        {
+                            var line = table.SingleOrDefault(x => x.Line.Equals(nline.Line));
+                            NA[i - 1] = line;
+                        }
+
+                    }
             }
         }
 
-        //private void ProcessLinesDesc(int source_line_count, int dest_line_count)
-        //{
-        //    for (int i = dest_line_count - 1; i >= 1; i--)
-        //    {
-        //        var destline = _destination.GetByIndex(i);
-        //        var nextdestline = _destination.GetByIndex(i - 1);
-
-        //        for (int j = source_line_count - 1; j >=1; j--)
-        //        {
-        //            var sourceline = _source.GetByIndex(i);
-        //            var nextSourceline = _source.GetByIndex(i - 1);
-
-        //            if (destline == sourceline && nextdestline == nextSourceline)
-        //            {
-        //                var source_table_ref = _matchlist[nextSourceline.Line] ?? null;
-        //                var dest_table_ref = _matchlist[nextdestline.Line] ?? null;
-        //                _source.ReplaceLine(i - 1, source_table_ref);
-        //                _destination.ReplaceLine(i - 1, dest_table_ref);
-        //            }
-        //        }
-        //    }
-        //}
-
-        //private void GenerateDiffResult(int dest_line_count)
-        //{
-        //    //NA points to an item in matchlist where line number in O is 0 then the line is new
-        //    for (int i = 0; i < dest_line_count - 1; i++)
-        //    {
-        //        var line = _destination.GetByIndex(i);
-
-        //        if (_matchlist.ContainsKey(line.Line) && line.line_number_in_o == null)
-        //        {
+        private void GenerateDiffResult()
+        {
+            //NA[i] = table[line] and NA[i].Olno = null then its a new Line in NA
+            //if NA[i] == OA[i] but NA[i+1] != OA[i+1]  
+            var size = Math.Max(NA.Count, OA.Count);
+            var diffNA = new DiffResult[size];
+            var diffOA = new DiffResult[size];
+            int lastAddedIndex = 0;
 
 
-        //        }
-        //    }
-        //}
+            for (int i = 0; i < size; i++)
+            {
+                if (NA.ElementAtOrDefault(i) != null)
+                {
+
+                    var item = NA[i];
+
+                    var diffO = new DiffResult
+                    {
+                        Line = item.Line,
+                        Length = item.Line.Length,
+                        NewIndex = item.Index ?? null,
+                        OldIndex = item.OLNO ?? null
+                    };
+
+                    if (IsInTable(item) && item.OLNO == null)
+                    {
+                        diffO.Status = DiffResultStatus.Added;
+                    }
+
+                    if (item.Index != null && item.OLNO != null)
+                    {
+                        diffNA[item.OLNO.Value] = diffO;
+                        lastAddedIndex = item.OLNO.Value;
+                    }
+                    else
+                    {
+                        lastAddedIndex = lastAddedIndex + 1;
+                        diffNA[lastAddedIndex] = diffO;
+                    }
+                }
+            }            
+
+
+                diffResultsNA.AddRange(diffNA.ToList());
+            //for (int i = 0; i < size; i++)
+            //{
+            //    if (OA.ElementAtOrDefault(i) != null)
+            //    {
+            //        var currentOALine = OA[i];
+
+            //        var diffO = new DiffResult()
+            //        {
+            //            Line = currentOALine.Line,
+            //            NewIndex = currentOALine.Index ?? null,
+            //            OldIndex = currentOALine.OLNO ?? null,
+            //            Length = currentOALine.Line.Length
+            //        };
+
+
+            //        if (IsInTable(currentOALine) && currentOALine.NC == DiffCounter.Zero)
+            //        {
+            //            diffO.Status = DiffResultStatus.ReMoved;
+            //        }
+            //        else
+            //        {
+            //            diffO.Status = DiffResultStatus.Unchanged;
+            //        }
+
+            //        diffOA[i] = diffO;
+            //    }
+            //}
+
+            //for (int i = 0; i < size; i++)
+            //{
+            //    if (NA.ElementAtOrDefault(i) != null)
+            //    {
+            //        var currentNALine = NA[i];
+
+            //        var diffN = new DiffResult()
+            //        {
+            //            Line = currentNALine.Line,
+            //            NewIndex = currentNALine.Index ?? null,
+            //            OldIndex = currentNALine.OLNO ?? null,
+            //            Length = currentNALine.Line.Length
+            //        };
+
+            //        if (IsInTable(currentNALine) && currentNALine.OLNO == null)
+            //        {
+            //            diffN.Status = DiffResultStatus.Added;
+            //        }
+            //        else
+            //        {
+            //            diffN.Status = DiffResultStatus.Unchanged;
+            //        }
+
+            //        diffNA[i] = diffN;
+            //    }
+            //}
+
+
+
+            //diffResultsNA.AddRange(diffNA.ToList());
+            //diffResultsOA.AddRange(diffOA.ToList());
+        }
+
 
         private void Replace(IList collection, int index, object obj)
         {
             collection.RemoveAt(index);
             collection.Insert(index, obj);
+        }
+
+        private bool IsInTable(ITextLine obj)
+        {
+            return table.Any(x => x.IsEqualTo(obj) == true);
         }
     }
 }
