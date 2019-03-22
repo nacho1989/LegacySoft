@@ -48,7 +48,7 @@
     <Compile Include="Engine.cs" />
     <Compile Include="Enumerations\DiffResultStatus.cs" />
     <Compile Include="Enumerations\DiffStatus.cs" />
-    <Compile Include="Models\DiffResult.cs" />
+    <Compile Include="Models\Diff.cs" />
     <Compile Include="Models\TextFile.cs" />
     <Compile Include="Models\TextLine.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
